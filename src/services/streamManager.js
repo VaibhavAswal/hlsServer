@@ -20,7 +20,7 @@ class StreamManager {
     await fs.mkdir(outputDir, { recursive: true });
 
     const m3u8Path = path.join(outputDir, "index.m3u8");
-    const streamUrl = `http://localhost:8787/hls/${streamId}/index.m3u8`;
+    const streamUrl = `http://34.81.189.91:8787/hls/${streamId}/index.m3u8`;
 
     // const ffmpegProcess = spawn("ffmpeg", [
     //   "-rtsp_transport", "tcp",
