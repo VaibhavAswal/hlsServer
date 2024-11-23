@@ -46,7 +46,7 @@ class StreamManager {
         "-c:v",
         "h264_nvenc", // NVIDIA GPU-based encoder
         "-preset",
-        "ultrafast", // Choose a preset for encoding speed
+        "fast", // Choose a preset for encoding speed
         "-f",
         "hls",
         "-hls_time",
@@ -72,7 +72,7 @@ class StreamManager {
         "-c:v",
         "h264_nvenc", // NVIDIA GPU-based encoder
         "-preset",
-        "ultrafast", // Choose a preset for encoding speed
+        "fast", // Choose a preset for encoding speed
         "-f",
         "hls",
         "-hls_time",
