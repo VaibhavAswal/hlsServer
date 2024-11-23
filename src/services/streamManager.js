@@ -36,13 +36,17 @@ class StreamManager {
     let ffmpegProcess
 
     if (rtspUrl.includes("rtsp://")) {
-       ffmpegProcess = spawn("ffmpeg", [
+      ffmpegProcess = spawn("ffmpeg", [
+        "-hwaccel",
+        "cuda", // Use NVIDIA CUDA for hardware acceleration
         "-rtsp_transport",
         "tcp",
         "-i",
         rtspUrl,
         "-c:v",
-        "libx264",
+        "h264_nvenc", // NVIDIA GPU-based encoder
+        "-preset",
+        "fast", // Choose a preset for encoding speed
         "-f",
         "hls",
         "-hls_time",
@@ -54,13 +58,17 @@ class StreamManager {
         m3u8Path,
       ]);
     }
-
+    
     if (rtspUrl.includes("rtmp://")) {
       ffmpegProcess = spawn("ffmpeg", [
+        "-hwaccel",
+        "cuda", // Use NVIDIA CUDA for hardware acceleration
         "-i",
         rtspUrl,
         "-c:v",
-        "libx264",
+        "h264_nvenc", // NVIDIA GPU-based encoder
+        "-preset",
+        "fast", // Choose a preset for encoding speed
         "-f",
         "hls",
         "-hls_time",
@@ -72,6 +80,7 @@ class StreamManager {
         m3u8Path,
       ]);
     }
+    
 
     Logger.log(`FFmpeg process started for rtspUrl ${rtspUrl}`);
     ffmpegProcess.on("close", (code) => {
