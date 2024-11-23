@@ -38,7 +38,7 @@ class StreamManager {
     if (rtspUrl.includes("rtsp://")) {
       ffmpegProcess = spawn("ffmpeg", [
         "-hwaccel",
-        "cuda", // Use NVIDIA CUDA for hardware acceleration
+        // "cuda", // Use NVIDIA CUDA for hardware acceleration
         "-gpu",
         "0", // Assign to GPU 0 (change for multi-GPU setups)
         "-fflags",
@@ -74,7 +74,7 @@ class StreamManager {
     if (rtspUrl.includes("rtmp://")) {
       ffmpegProcess = spawn("ffmpeg", [
         "-hwaccel",
-        "cuda", // Use NVIDIA CUDA for hardware acceleration
+        // "cuda", // Use NVIDIA CUDA for hardware acceleration
         "-gpu",
         "0", // Assign to GPU 0 (change for multi-GPU setups)
         "-fflags",
