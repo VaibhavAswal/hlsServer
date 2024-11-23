@@ -39,35 +39,27 @@ class StreamManager {
       ffmpegProcess = spawn("ffmpeg", [
         "-hwaccel",
         "cuda", // Use NVIDIA CUDA for hardware acceleration
-        "-gpu",
-        "0", // Assign to GPU 0 (change for multi-GPU setups)
-        "-fflags",
-        "nobuffer", // Reduce latency
-        "-threads",
-        "1", // Use a single thread to avoid contention
         "-rtsp_transport",
-        "tcp", // Use TCP for reliable RTSP transport
+        "tcp",
         "-i",
         rtspUrl,
-        "-vf",
-        "scale=1280:720", // Downscale for lower resource usage
         "-c:v",
         "h264_nvenc", // NVIDIA GPU-based encoder
+        "-preset",
+        "ultrafast", // Choose a preset for encoding speed
+        "-f",
+        "hls",
+        "-hls_time",
+        "5",
+        "-hls_list_size",
+        "5",
+        "-hls_flags",
+        "delete_segments",
         "-b:v",
         "800k", // Set video bitrate
         "-bufsize",
         "1600k", // Set buffer size
-        "-preset",
-        "ultrafast", // Optimize for speed
-        "-f",
-        "hls", // Output format
-        "-hls_time",
-        "5", // HLS segment duration
-        "-hls_list_size",
-        "5", // Number of segments in the playlist
-        "-hls_flags",
-        "delete_segments", // Automatically delete old segments
-        m3u8Path, // Path for HLS output
+        m3u8Path,
       ]);
     }
     
@@ -75,36 +67,27 @@ class StreamManager {
       ffmpegProcess = spawn("ffmpeg", [
         "-hwaccel",
         "cuda", // Use NVIDIA CUDA for hardware acceleration
-        "-gpu",
-        "0", // Assign to GPU 0 (change for multi-GPU setups)
-        "-fflags",
-        "nobuffer", // Reduce latency
-        "-threads",
-        "1", // Use a single thread to avoid contention
         "-i",
         rtspUrl,
-        "-vf",
-        "scale=1280:720", // Downscale for lower resource usage
         "-c:v",
         "h264_nvenc", // NVIDIA GPU-based encoder
+        "-preset",
+        "ultrafast", // Choose a preset for encoding speed
+        "-f",
+        "hls",
+        "-hls_time",
+        "5",
+        "-hls_list_size",
+        "5",
+        "-hls_flags",
+        "delete_segments",
         "-b:v",
         "800k", // Set video bitrate
         "-bufsize",
         "1600k", // Set buffer size
-        "-preset",
-        "ultrafast", // Optimize for speed
-        "-f",
-        "hls", // Output format
-        "-hls_time",
-        "5", // HLS segment duration
-        "-hls_list_size",
-        "5", // Number of segments in the playlist
-        "-hls_flags",
-        "delete_segments", // Automatically delete old segments
-        m3u8Path, // Path for HLS output
+        m3u8Path,
       ]);
     }
-    
     
 
     Logger.log(`FFmpeg process started for rtspUrl ${rtspUrl}`);
