@@ -43,8 +43,6 @@ class StreamManager {
         "tcp",
         "-i",
         rtspUrl,
-        "-tune",
-        "zerolatency", // Optimize for low latency
         "-c:v",
         "h264_nvenc", // NVIDIA GPU-based encoder
         "-preset",
@@ -71,8 +69,6 @@ class StreamManager {
         "cuda", // Use NVIDIA CUDA for hardware acceleration
         "-i",
         rtspUrl,
-        "-tune",
-        "zerolatency", // Optimize for low latency
         "-c:v",
         "h264_nvenc", // NVIDIA GPU-based encoder
         "-preset",
