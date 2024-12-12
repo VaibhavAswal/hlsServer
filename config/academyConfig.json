@@ -1,7 +1,6 @@
 {
-    "academy1": {
-      "switcherEngine":"rtmp://34.81.189.91/live/stream2",
-      "ottUrl": "rtsp://admin:admin_123@122.180.245.190/unicast/c4/s0/live"
+    "27": {
+      "raw": "rtsp://admin:admin_123@122.180.245.190/unicast/c4/s0/live"
 
     },
     "academy2": {
