@@ -1,6 +1,6 @@
 const fs = require('fs').promises;
 
-async function waitForFile(filePath, { interval = 500, timeout = 50000 } = {}) {
+async function waitForFile(filePath, { interval = 500, timeout = 500000 } = {}) {
   const startTime = Date.now();
   
   while (Date.now() - startTime <= timeout) {
