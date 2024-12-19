@@ -44,7 +44,7 @@ class StreamManager {
         "-i",
         rtspUrl,
         "-c:v",
-        "h264_nvenc", // NVIDIA GPU-based encoder
+        "libx264", // NVIDIA GPU-based encoder
         "-preset",
         "veryfast", // Choose a preset for encoding 
         "tune",
@@ -74,7 +74,7 @@ class StreamManager {
         "-i",
         rtspUrl,
         "-c:v",
-        "h264_nvenc", // NVIDIA GPU-based encoder
+        "libx264", // NVIDIA GPU-based encoder
         "-preset",
         "veryfast", // Choose a preset for encoding speed
         "tune",
