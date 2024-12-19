@@ -56,7 +56,7 @@ class StreamManager {
         "-hls_flags",
         "delete_segments+independent_segments",
         "-b:v",
-        "500k", // Set video bitrate
+        "300k", // Set video bitrate
         "-bufsize",
         "1000k", // Set buffer size
         m3u8Path,
@@ -82,7 +82,7 @@ class StreamManager {
         "-hls_flags",
         "delete_segments+independent_segments",
         "-b:v",
-        "500k", // Set video bitrate
+        "300k", // Set video bitrate
         "-bufsize",
         "1000k", // Set buffer size
         m3u8Path,
