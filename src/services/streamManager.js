@@ -47,8 +47,8 @@ class StreamManager {
         "libx264", // NVIDIA GPU-based encoder
         "-preset",
         "veryfast", // Choose a preset for encoding 
-        "tune",
-        "zerolatency", // Optimize for low latency
+        // "tune",
+        // "zerolatency", // Optimize for low latency
         "-f",
         "hls",
         "-hls_time",
@@ -77,8 +77,8 @@ class StreamManager {
         "libx264", // NVIDIA GPU-based encoder
         "-preset",
         "veryfast", // Choose a preset for encoding speed
-        "tune",
-        "zerolatency", // Optimize for low latency
+        // "tune",
+        // "zerolatency", // Optimize for low latency
         "-f",
         "hls",
         "-hls_time",
