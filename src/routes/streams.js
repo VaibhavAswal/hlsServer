@@ -11,7 +11,7 @@ router.post('/singlestream', async (req, res) => {
   
   try {
     const { streamId, streamUrl } = await StreamManager.startStream(rtspUrl);
-    resres.set("Cache-Control", "no-cache").json({ streamId, streamUrl });
+    res.set("Cache-Control", "no-cache").json({ streamId, streamUrl });
   } catch (error) {
     Logger.error("Stream start failed", error);
     res.status(500).send(`Failed to start stream: ${error.message}`);
