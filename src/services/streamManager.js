@@ -33,7 +33,7 @@ class StreamManager {
     //   m3u8Path,
     // ]);
 
-    let ffmpegProcess
+    let ffmpegProcess;
 
     if (rtspUrl.includes("rtsp://")) {
       ffmpegProcess = spawn("ffmpeg", [
@@ -46,23 +46,27 @@ class StreamManager {
         "-c:v",
         "h264_nvenc", // NVIDIA GPU-based encoder
         "-preset",
-        "fast", // Choose a preset for encoding speed
+        "veryfast", // Choose a preset for encoding 
+        "tune",
+        "zerolatency", // Optimize for low latency
         "-f",
         "hls",
         "-hls_time",
-        "5",
+        "2",
         "-hls_list_size",
-        "5",
+        "3",
         "-hls_flags",
-        "delete_segments",
+        "delete_segments+independent_segments",
         "-b:v",
-        "800k", // Set video bitrate
+        "500k", // Set video bitrate
         "-bufsize",
-        "1600k", // Set buffer size
+        "1000k", // Set buffer size
+        "force_key_frames",
+        "expr:gte(t,n_forced*2)",
         m3u8Path,
       ]);
     }
-    
+
     if (rtspUrl.includes("rtmp://")) {
       ffmpegProcess = spawn("ffmpeg", [
         "-hwaccel",
@@ -72,30 +76,38 @@ class StreamManager {
         "-c:v",
         "h264_nvenc", // NVIDIA GPU-based encoder
         "-preset",
-        "fast", // Choose a preset for encoding speed
+        "veryfast", // Choose a preset for encoding speed
+        "tune",
+        "zerolatency", // Optimize for low latency
         "-f",
         "hls",
         "-hls_time",
-        "5",
+        "2",
         "-hls_list_size",
-        "5",
+        "3",
         "-hls_flags",
-        "delete_segments",
+        "delete_segments+independent_segments",
         "-b:v",
-        "800k", // Set video bitrate
+        "500k", // Set video bitrate
         "-bufsize",
-        "1600k", // Set buffer size
+        "1000k", // Set buffer size
+        "force_key_frames",
+        "expr:gte(t,n_forced*2)",
         m3u8Path,
       ]);
     }
-    
 
     Logger.log(`FFmpeg process started for rtspUrl ${rtspUrl}`);
     ffmpegProcess.on("close", (code) => {
       this.cleanupStream(streamId, rtspUrl, outputDir);
       if (code !== 0) Logger.error(`FFmpeg process exited with code ${code}`);
     });
-
+    ffmpegProcess.stderr.on("data", (data) => {
+      Logger.error(`FFmpeg error: ${data.toString()}`);
+    });
+    ffmpegProcess.stdout.on("data", (data) => {
+      Logger.log(`FFmpeg output: ${data.toString()}`);
+    });
     const streamInfo = { streamId, streamUrl };
     this.streams.set(streamId, { ffmpegProcess, outputDir });
     this.streamMap.set(rtspUrl, streamInfo);
