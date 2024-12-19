@@ -59,8 +59,6 @@ class StreamManager {
         "500k", // Set video bitrate
         "-bufsize",
         "1000k", // Set buffer size
-        "force_key_frames",
-        "expr:gte(t,n_forced*2)",
         m3u8Path,
       ]);
     }
@@ -87,8 +85,6 @@ class StreamManager {
         "500k", // Set video bitrate
         "-bufsize",
         "1000k", // Set buffer size
-        "force_key_frames",
-        "expr:gte(t,n_forced*2)",
         m3u8Path,
       ]);
     }
