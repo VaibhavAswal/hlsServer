@@ -16,106 +16,98 @@ class StreamManager {
     if (existingStream) return existingStream;
 
     const streamId = uuidv4();
-    const outputDir = path.join(__dirname, `../../hls_streams/${streamId}`);
+    // Use Windows-style path joining
+    const outputDir = path.join(__dirname, "..", "..", "hls_streams", streamId);
     await fs.mkdir(outputDir, { recursive: true });
 
     const m3u8Path = path.join(outputDir, "index.m3u8");
-    const streamUrl = `http://34.81.189.91:8787/hls/${streamId}/index.m3u8`;
-
-    // const ffmpegProcess = spawn("ffmpeg", [
-    //   "-rtsp_transport", "tcp",
-    //   "-i", rtspUrl,
-    //   "-c:v", "libx264",
-    //   "-f", "hls",
-    //   "-hls_time", "5",
-    //   "-hls_list_size", "5",
-    //   "-hls_flags", "delete_segments",
-    //   m3u8Path,
-    // ]);
+    // Use backslashes for Windows paths in URLs
+    const streamUrl = `http://localhost:8787/hls/${streamId}/index.m3u8`;
 
     let ffmpegProcess;
+    // Common FFmpeg arguments
+    const ffmpegArgs = [
+      "-c:v", "libx264",
+      "-preset", "ultrafast",
+      "-tune", "zerolatency",
+      "-f", "hls",
+      "-hls_time", "0.5",
+      "-hls_list_size", "2",
+      "-hls_flags", "delete_segments+independent_segments+round_durations",
+      "-hls_segment_type", "fmp4",
+      "-b:v", "500k",
+      "-bufsize", "500k",
+      "-g", "15",
+      "-sc_threshold", "0",
+      "-vsync", "cfr"
+    ];
 
     if (rtspUrl.includes("rtsp://")) {
       ffmpegProcess = spawn("ffmpeg", [
-        "-hwaccel",
-        "cuda", // Use NVIDIA CUDA for hardware acceleration
-        "-rtsp_transport",
-        "tcp",
-        "-i",
-        rtspUrl,
-        "-c:v",
-        "libx264", // NVIDIA GPU-based encoder
-        "-preset",
-        "veryfast", // Choose a preset for encoding 
-        "-f",
-        "hls",
-        "-hls_time",
-        "2",
-        "-hls_list_size",
-        "3",
-        "-hls_flags",
-        "delete_segments+independent_segments",
-        "-b:v",
-        "300k", // Set video bitrate
-        "-bufsize",
-        "1000k", // Set buffer size
-        m3u8Path,
-      ]);
-    }
-
-    if (rtspUrl.includes("rtmp://")) {
+        "-rtsp_transport", "tcp",
+        "-i", rtspUrl,
+        ...ffmpegArgs,
+        m3u8Path.replace(/\\/g, "/") // Convert Windows backslashes to forward slashes for FFmpeg
+      ], {
+        shell: true, // Use shell on Windows
+        windowsHide: true // Prevent command window from showing
+      });
+    } else if (rtspUrl.includes("rtmp://")) {
       ffmpegProcess = spawn("ffmpeg", [
-        "-hwaccel",
-        "cuda", // Use NVIDIA CUDA for hardware acceleration
-        "-i",
-        rtspUrl,
-        "-c:v",
-        "libx264", // NVIDIA GPU-based encoder
-        "-preset",
-        "veryfast", // Choose a preset for encoding speed
-        "-f",
-        "hls",
-        "-hls_time",
-        "2",
-        "-hls_list_size",
-        "3",
-        "-hls_flags",
-        "delete_segments+independent_segments",
-        "-b:v",
-        "300k", // Set video bitrate
-        "-bufsize",
-        "1000k", // Set buffer size
-        m3u8Path,
-      ]);
+        "-i", rtspUrl,
+        ...ffmpegArgs,
+        m3u8Path.replace(/\\/g, "/") // Convert Windows backslashes to forward slashes for FFmpeg
+      ], {
+        shell: true,
+        windowsHide: true
+      });
     }
 
     Logger.log(`FFmpeg process started for rtspUrl ${rtspUrl}`);
+    
+    ffmpegProcess.on("error", (err) => {
+      Logger.error(`Failed to start FFmpeg process: ${err.message}`);
+      this.cleanupStream(streamId, rtspUrl, outputDir);
+    });
+
     ffmpegProcess.on("close", (code) => {
       this.cleanupStream(streamId, rtspUrl, outputDir);
       if (code !== 0) Logger.error(`FFmpeg process exited with code ${code}`);
     });
+
     ffmpegProcess.stderr.on("data", (data) => {
       Logger.error(`FFmpeg error: ${data.toString()}`);
     });
+
     ffmpegProcess.stdout.on("data", (data) => {
       Logger.log(`FFmpeg output: ${data.toString()}`);
     });
+
     const streamInfo = { streamId, streamUrl };
     this.streams.set(streamId, { ffmpegProcess, outputDir });
     this.streamMap.set(rtspUrl, streamInfo);
 
-    await waitForFile(m3u8Path);
-
-    return streamInfo;
+    try {
+      await waitForFile(m3u8Path);
+      return streamInfo;
+    } catch (error) {
+      Logger.error(`Error waiting for m3u8 file: ${error.message}`);
+      this.cleanupStream(streamId, rtspUrl, outputDir);
+      throw error;
+    }
   }
 
-  cleanupStream(streamId, rtspUrl, outputDir) {
+  async cleanupStream(streamId, rtspUrl, outputDir) {
     this.streams.delete(streamId);
     this.streamMap.delete(rtspUrl);
 
-    fs.rm(outputDir, { recursive: true, force: true }).catch((err) =>
-      Logger.error(`Error deleting folder`, err)
-    );
+    try {
+      // Add a delay before deleting to ensure files are not in use
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await fs.rm(outputDir, { recursive: true, force: true });
+    } catch (err) {
+      Logger.error(`Error deleting folder: ${err.message}`);
+    }
   }
 
   stopStream(streamId) {
@@ -127,7 +119,9 @@ class StreamManager {
       )?.[0];
 
       if (rtspUrl) this.streamMap.delete(rtspUrl);
-      stream.ffmpegProcess.kill("SIGINT");
+      
+      // Use SIGTERM instead of SIGINT on Windows
+      stream.ffmpegProcess.kill("SIGTERM");
       return true;
     }
     return false;
