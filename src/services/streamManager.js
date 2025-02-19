@@ -45,7 +45,7 @@ class StreamManager {
     await fs.mkdir(outputDir, { recursive: true });
 
     const m3u8Path = path.join(outputDir, "index.m3u8");
-    const streamUrl = `http://localhost:8787/hls/${streamId}/index.m3u8`;
+    const streamUrl = `https://hls-server.tap-ai.com/hls/${streamId}/index.m3u8`;
 
     const ffmpegArgs = [
       "-hide_banner", "-loglevel", "info",
