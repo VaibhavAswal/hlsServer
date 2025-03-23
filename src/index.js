@@ -9,35 +9,62 @@ const PORT = process.env.PORT || 8787;
 
 const app = createApp();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ noServer: true });
 
 wss.on('connection', async (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const rtspUrl = url.searchParams.get('rtspUrl');
+
+  // Heartbeat setup
+  let isAlive = true;
+  const heartbeatInterval = setInterval(() => {
+    if (!isAlive) return ws.terminate();
+    isAlive = false;
+    ws.ping();
+  }, 30000);
+  ws.on('pong', () => {
+    isAlive = true;
+  });
 
   if (!rtspUrl) {
     ws.close(4000, 'RTSP URL required');
     return;
   }
 
-  try {
-    const streamInfo = await StreamManager.handleClientConnect(rtspUrl);
-    ws.send(JSON.stringify({ type: 'streamInfo', data: streamInfo }));
-    ws.streamId = streamInfo.streamId;
-  } catch (error) {
-    ws.send(JSON.stringify({ 
-      type: 'error', 
-      message: `Failed to start stream: ${error.message}`
-    }));
-    ws.close();
-    return;
-  }
+  let streamId;
 
-  ws.on('close', () => {
-    if (ws.streamId) {
-      StreamManager.handleClientDisconnect(ws.streamId);
+  const cleanup = async () => {
+    clearInterval(heartbeatInterval);
+    if (streamId) {
+      await StreamManager.handleClientDisconnect(streamId);
     }
+  };
+
+  ws.on('close', async () => {
+    await cleanup();
   });
+
+  ws.on('error', async (error) => {
+    console.error('WebSocket error:', error);
+    await cleanup();
+  });
+
+  StreamManager.handleClientConnect(rtspUrl)
+    .then(({ streamId: sid, streamUrl }) => {
+      streamId = sid;
+      ws.send(JSON.stringify({
+        type: 'streamInfo',
+        data: { streamId: sid, streamUrl }
+      }));
+    })
+    .catch(error => {
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: error.message
+      }));
+      ws.close();
+    });
+
 });
 
 // Graceful shutdown handler
@@ -61,6 +88,11 @@ process.on("SIGINT", async () => {
 
 server.listen(PORT, () => {
   Logger.log(`Server running on port ${PORT}`);
+});
+server.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
 });
 
 process.on('SIGTERM', () => {

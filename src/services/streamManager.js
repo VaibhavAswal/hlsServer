@@ -10,6 +10,7 @@ class StreamManager {
     this.streams = new Map();          // Key: rtspUrl, Value: stream entry
     this.pendingStreams = new Map();   // Key: rtspUrl, Value: pending promise
     this.streamIdToRtspUrl = new Map();// Key: streamId, Value: rtspUrl
+    this.cleanupTimers = new Map();
   }
 
   async handleClientConnect(rtspUrl) {
@@ -18,6 +19,7 @@ class StreamManager {
     // Existing stream
     if (streamEntry) {
       streamEntry.clientCount++;
+      clearTimeout(this.cleanupTimers.get(rtspUrl));
       return { streamId: streamEntry.streamId, streamUrl: streamEntry.streamUrl };
     }
 
@@ -31,8 +33,7 @@ class StreamManager {
     this.pendingStreams.set(rtspUrl, pendingPromise);
 
     try {
-      const streamInfo = await pendingPromise;
-      return streamInfo;
+      return await pendingPromise;
     } catch (error) {
       this.pendingStreams.delete(rtspUrl);
       throw error;
@@ -133,18 +134,27 @@ class StreamManager {
     streamEntry.clientCount--;
 
     if (streamEntry.clientCount <= 0) {
-      Logger.log(`Stopping stream ${streamId}`);
+      this.scheduleStreamCleanup(rtspUrl, streamEntry);
+    }
+  }
+
+  scheduleStreamCleanup(rtspUrl, streamEntry) {
+    // Wait 2 minutes before cleaning up
+    const timer = setTimeout(() => {
+      Logger.log(`Stopping stream ${streamEntry.streamId}`);
       streamEntry.ffmpegProcess.kill("SIGTERM");
       this.streams.delete(rtspUrl);
-      this.streamIdToRtspUrl.delete(streamId);
-      this.cleanupStream(streamId, rtspUrl, streamEntry.outputDir);
-    }
+      this.streamIdToRtspUrl.delete(streamEntry.streamId);
+      this.cleanupStream(streamEntry.streamId, rtspUrl, streamEntry.outputDir);
+    }, 5000); // 2 minutes //modified to 5 seconds
+
+    this.cleanupTimers.set(rtspUrl, timer);
   }
 
   async cleanupStream(streamId, rtspUrl, outputDir) {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
       await fs.rm(outputDir, { recursive: true, force: true });
+      Logger.log(`Cleaned up stream ${streamId}`);
     } catch (err) {
       Logger.error(`Cleanup error: ${err.message}`);
     }
